@@ -12,7 +12,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String payment_response;
+  late String payment_response;
 
   //Live
   String mid = "LIVE_MID_HERE";
@@ -81,7 +81,7 @@ class _MyAppState extends State<MyApp> {
                 TextField(
                   onChanged: (value) {
                     try {
-                      amount = double.tryParse(value);
+                      amount = double.tryParse(value)!;
                     } catch (e) {
                       print(e);
                     }
