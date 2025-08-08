@@ -4,15 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:paytm/paytm.dart';
 
-void main() => runApp(MyApp());
+void main() => runApp(const MyApp());
 
 class MyApp extends StatefulWidget {
+  const MyApp({Key? key}) : super(key: key);
+
   @override
   _MyAppState createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
-  late String payment_response;
+  // FIX 1: Made payment_response nullable to prevent crash on first build.
+  String? payment_response;
 
   //Live
   String mid = "LIVE_MID_HERE";
@@ -26,13 +29,8 @@ class _MyAppState extends State<MyApp> {
   // String website = "WEBSTAGING";
   // bool testing = true;
 
-  double amount = 1;
+  double amount = 1.0;
   bool loading = false;
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,106 +41,102 @@ class _MyAppState extends State<MyApp> {
         ),
         body: SingleChildScrollView(
           child: Padding(
-            padding: EdgeInsets.all(10.0),
+            padding: const EdgeInsets.all(10.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                Text(
+                const Text(
                     'For Testing Credentials make sure appInvokeEnabled set to FALSE or Paytm APP is not installed on the device.'),
-
-                SizedBox(
+                const SizedBox(
                   height: 10,
                 ),
-
                 TextField(
                   onChanged: (value) {
                     mid = value;
                   },
-                  decoration: InputDecoration(hintText: "Enter MID here"),
+                  decoration: const InputDecoration(hintText: "Enter MID here"),
                   keyboardType: TextInputType.text,
                 ),
                 TextField(
                   onChanged: (value) {
                     PAYTM_MERCHANT_KEY = value;
                   },
-                  decoration:
-                      InputDecoration(hintText: "Enter Merchant Key here"),
+                  decoration: const InputDecoration(
+                      hintText: "Enter Merchant Key here"),
                   keyboardType: TextInputType.text,
                 ),
                 TextField(
                   onChanged: (value) {
                     website = value;
                   },
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                       hintText: "Enter Website here (Probably DEFAULT)"),
                   keyboardType: TextInputType.text,
                 ),
                 TextField(
                   onChanged: (value) {
-                    try {
-                      amount = double.tryParse(value)!;
-                    } catch (e) {
-                      print(e);
+                    // FIX 3: Safely parse the double without crashing on invalid input.
+                    final parsedAmount = double.tryParse(value);
+                    if (parsedAmount != null) {
+                      amount = parsedAmount;
                     }
                   },
-                  decoration: InputDecoration(hintText: "Enter Amount here"),
+                  decoration: const InputDecoration(hintText: "Enter Amount here"),
                   keyboardType: TextInputType.number,
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 10,
                 ),
-                payment_response != null
-                    ? Text('Response: $payment_response\n')
-                    : Container(),
-//                loading
-//                    ? Center(
-//                        child: Container(
-//                            width: 50,
-//                            height: 50,
-//                            child: CircularProgressIndicator()),
-//                      )
-//                    : Container(),
-                RaisedButton(
+                // FIX 4: Correctly check if the nullable string has a value.
+                if (payment_response != null)
+                  Text('Response: $payment_response\n'),
+
+                if (loading)
+                  const Center(
+                    child: SizedBox(
+                        width: 50,
+                        height: 50,
+                        child: CircularProgressIndicator()),
+                  ),
+
+                // FIX 2: Replaced deprecated RaisedButton with modern ElevatedButton.
+                ElevatedButton(
                   onPressed: () {
-                    //Firstly Generate CheckSum bcoz Paytm Require this
                     generateTxnToken(0);
                   },
-                  color: Colors.blue,
-                  child: Text(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                  child: const Text(
                     "Pay using Wallet",
                     style: TextStyle(color: Colors.white),
                   ),
                 ),
-                RaisedButton(
+                ElevatedButton(
                   onPressed: () {
-                    //Firstly Generate CheckSum bcoz Paytm Require this
                     generateTxnToken(1);
                   },
-                  color: Colors.blue,
-                  child: Text(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                  child: const Text(
                     "Pay using Net Banking",
                     style: TextStyle(color: Colors.white),
                   ),
                 ),
-                RaisedButton(
+                ElevatedButton(
                   onPressed: () {
-                    //Firstly Generate CheckSum bcoz Paytm Require this
                     generateTxnToken(2);
                   },
-                  color: Colors.blue,
-                  child: Text(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                  child: const Text(
                     "Pay using UPI",
                     style: TextStyle(color: Colors.white),
                   ),
                 ),
-                RaisedButton(
+                ElevatedButton(
                   onPressed: () {
-                    //Firstly Generate CheckSum bcoz Paytm Require this
                     generateTxnToken(3);
                   },
-                  color: Colors.blue,
-                  child: Text(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                  child: const Text(
                     "Pay using Credit Card",
                     style: TextStyle(color: Colors.white),
                   ),
@@ -162,13 +156,10 @@ class _MyAppState extends State<MyApp> {
     String orderId = DateTime.now().millisecondsSinceEpoch.toString();
 
     String callBackUrl = (testing
-            ? 'https://securegw-stage.paytm.in'
-            : 'https://securegw.paytm.in') +
+        ? 'https://securegw-stage.paytm.in'
+        : 'https://securegw.paytm.in') +
         '/theia/paytmCallback?ORDER_ID=' +
         orderId;
-
-    //Host the Server Side Code on your Server and use your URL here. The following URL may or may not work. Because hosted on free server.
-    //Server Side code url: https://github.com/mrdishant/Paytm-Plugin-Server
 
     var url = 'https://desolate-anchorage-29312.herokuapp.com/generateTxnToken';
 
@@ -181,7 +172,7 @@ class _MyAppState extends State<MyApp> {
       "callbackUrl": callBackUrl,
       "custId": "122",
       "mode": mode.toString(),
-      "testing": testing ? 0 : 1
+      "testing": testing ? 0 : 1,
     });
 
     try {
@@ -199,13 +190,14 @@ class _MyAppState extends State<MyApp> {
       });
 
       var paytmResponse = Paytm.payWithPaytm(
-          mId: mid,
-          orderId: orderId,
-          txnToken: txnToken,
-          txnAmount: amount.toString(),
-          callBackUrl: callBackUrl,
-          staging: testing,
-          appInvokeEnabled: false);
+        mId: mid,
+        orderId: orderId,
+        txnToken: txnToken,
+        txnAmount: amount.toString(),
+        callBackUrl: callBackUrl,
+        staging: testing,
+        appInvokeEnabled: false,
+      );
 
       paytmResponse.then((value) {
         print(value);
@@ -220,11 +212,15 @@ class _MyAppState extends State<MyApp> {
               payment_response = value['response']['STATUS'];
             }
           }
-          payment_response += "\n" + value.toString();
+          payment_response = (payment_response ?? "") + "\n" + value.toString();
         });
       });
     } catch (e) {
       print(e);
+      setState(() {
+        loading = false;
+        payment_response = e.toString();
+      });
     }
   }
 }
